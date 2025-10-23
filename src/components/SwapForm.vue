@@ -636,6 +636,37 @@ function performSwap() {
   font-weight: 600;
   line-height: 1.4;
 }
+.swap-form-wide {
+  margin: 0 auto;
+  background: #ffffff;
+  border-radius: 20px;
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.08);
+  width: 100%;
+  max-width: 700px;
+  padding: 24px 32px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+/* На мобильных — компактнее */
+@media (max-width: 768px) {
+  .swap-form-wide {
+    max-width: 90vw;
+    padding: 16px 18px;
+    border-radius: 16px;
+  }
+  .swap-input {
+    font-size: 24px;
+  }
+  .btn-wallet-wide {
+    font-size: 18px;
+    padding: 12px 0;
+  }
+  .swap-type {
+    font-size: 15px;
+    padding: 4px 16px;
+  }
+}
 .slide-enter-active, .slide-leave-active {
   transition: transform 0.3s ease;
 }

@@ -2,6 +2,33 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Telegram WebApp и мобильные устройства - управление клавиатурой */
+* {
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* Предотвращаем зум при фокусе на input в iOS */
+input[type="text"],
+input[type="number"],
+input[type="tel"],
+textarea {
+  font-size: 16px !important;
+}
+
+/* Убираем стандартное поведение автозаполнения */
+input:-webkit-autofill,
+input:-webkit-autofill:hover,
+input:-webkit-autofill:focus {
+  -webkit-box-shadow: 0 0 0 1000px transparent inset;
+  transition: background-color 5000s ease-in-out 0s;
+}
+
+/* Стили для скроллбара */
+::-webkit-scrollbar {
+  width: 0px;
+  background: transparent;
+}
+
 :root {
   font-family: system-ui, Avenir, Helvetica, Arial, sans-serif;
   line-height: 1.5;

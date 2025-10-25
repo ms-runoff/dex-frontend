@@ -49,9 +49,23 @@ const showWalletInfo = ref(false)
 
 onMounted(() => {
   if (window.Telegram && window.Telegram.WebApp) {
-    window.Telegram.WebApp.ready()
-    window.Telegram.WebApp.expand()
+    const tg = window.Telegram.WebApp
+    tg.ready()
+    tg.expand()
+    
+    // Отключаем вертикальные свайпы для лучшей работы с клавиатурой
+    if (tg.disableVerticalSwipes) {
+      tg.disableVerticalSwipes()
+    }
+    
+    // Устанавливаем цвета темы
+    tg.setHeaderColor('#FFFFFF')
+    tg.setBackgroundColor('#FFFFFF')
+    
+    // Включаем полноэкранный режим
+    tg.isClosingConfirmationEnabled = false
   }
+  
   window.addEventListener('open-wallet-menu', () => {})
   window.addEventListener('disconnect-wallet', handleDisconnect)
 })
@@ -101,6 +115,11 @@ html, body {
   min-height: 100vh;
   overflow-x: hidden;
   background: #FFFFFF;
+  /* Для iOS Safari - убираем bounce эффект */
+  overscroll-behavior-y: none;
+  -webkit-overflow-scrolling: touch;
+  /* Предотвращаем зум при фокусе на input */
+  touch-action: pan-y;
 }
 
 #app {
@@ -111,7 +130,11 @@ html, body {
   display: flex;
   flex-direction: column;
   align-items: center;
-  padding: 0 16px; /* ДОБАВЛЕНО! */
+  padding: 0 16px;
+  /* Telegram WebApp стили */
+  -webkit-tap-highlight-color: transparent;
+  -webkit-user-select: none;
+  user-select: none;
 }
 
 .page-wrapper {

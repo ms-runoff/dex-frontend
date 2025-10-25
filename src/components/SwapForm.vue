@@ -10,10 +10,14 @@
           <span class="balance-text">Баланс: {{ fromBalance }}</span>
         </div>
         <div class="input-container">
-          <input
+                    <input
+            ref="fromInput"
             type="text"
+            inputmode="decimal"
             v-model="fromAmount"
             @input="onFromInput"
+            @focus="onInputFocus"
+            @blur="onInputBlur"
             placeholder="0.0"
             class="token-input"
           />
@@ -39,10 +43,14 @@
           <span class="balance-text">Баланс: {{ toBalance }}</span>
         </div>
         <div class="input-container">
-          <input
+                    <input
+            ref="toInput"
             type="text"
+            inputmode="decimal"
             v-model="toAmount"
             @input="onToInput"
+            @focus="onInputFocus"
+            @blur="onInputBlur"
             placeholder="0.0"
             class="token-input"
           />
@@ -75,6 +83,15 @@
           <span class="info-value">{{ minReceived }} {{ toToken.symbol }}</span>
         </div>
       </div>
+
+            <!-- Кнопка закрытия клавиатуры -->
+      <button 
+        v-if="isKeyboardOpen" 
+        class="done-button" 
+        @click="hideKeyboard"
+      >
+        ✓ Готово
+      </button>
 
       <!-- Кнопка -->
       <button class="action-button" @click="handleAction">
@@ -175,6 +192,9 @@ const statusMsg = ref('')
 const walletAddress = ref('')
 const wcUri = ref('')
 const walletBalance = ref('0,00')
+const fromInput = ref(null)
+const toInput = ref(null)
+const isKeyboardOpen = ref(false)
 
 const recentTxs = ref([
   { id: 1, fromAmt: '1.5', fromTkn: 'TON', toAmt: '3.52', toTkn: 'USDT', time: '2 мин назад' },
@@ -230,6 +250,12 @@ onMounted(async () => {
 
   window.addEventListener('open-wallet-menu', openWallet)
   window.addEventListener('disconnect-wallet', disconnect)
+  
+  // Настройка Telegram WebApp для работы с клавиатурой
+  if (window.Telegram && window.Telegram.WebApp) {
+    // Отключаем вертикальные свайпы чтобы клавиатура не мешала
+    window.Telegram.WebApp.disableVerticalSwipes()
+  }
 })
 
 onUnmounted(() => {
@@ -367,6 +393,30 @@ function closeQR() {
   statusMsg.value = ''
   wcUri.value = ''
 }
+
+function onInputFocus() {
+  isKeyboardOpen.value = true
+  // Telegram WebApp: разрешаем вертикальный скролл когда клавиатура открыта
+  if (window.Telegram && window.Telegram.WebApp) {
+    window.Telegram.WebApp.expand()
+  }
+}
+
+function onInputBlur() {
+  // Небольшая задержка для плавности
+  setTimeout(() => {
+    isKeyboardOpen.value = false
+  }, 100)
+}
+
+function hideKeyboard() {
+  // Убираем фокус со всех input полей
+  if (fromInput.value) fromInput.value.blur()
+  if (toInput.value) toInput.value.blur()
+  
+  // Дополнительно скроллим к началу для Telegram
+  window.scrollTo({ top: 0, behavior: 'smooth' })
+}
 </script>
 
 <style scoped>
@@ -428,10 +478,19 @@ function closeQR() {
   background: transparent;
   outline: none;
   color: #1A1A1A;
+  -webkit-user-select: text;
+  user-select: text;
 }
 
 .token-input::placeholder {
   color: #D1D1D1;
+}
+
+/* Для iOS - убираем увеличение при фокусе */
+@supports (-webkit-touch-callout: none) {
+  .token-input {
+    font-size: max(16px, 24px);
+  }
 }
 
 .token-selector {
@@ -524,6 +583,26 @@ function closeQR() {
   font-size: 14px;
   font-weight: 600;
   color: #1A1A1A;
+}
+
+.done-button {
+  width: 100%;
+  background: #28a745;
+  color: #fff;
+  border: none;
+  border-radius: 12px;
+  padding: 14px;
+  font-size: 15px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s;
+  margin-bottom: 12px;
+  box-shadow: 0 2px 8px rgba(40, 167, 69, 0.3);
+}
+
+.done-button:active {
+  transform: scale(0.98);
+  background: #218838;
 }
 
 .action-button {

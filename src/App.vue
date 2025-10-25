@@ -111,6 +111,7 @@ html, body {
   display: flex;
   flex-direction: column;
   align-items: center;
+  padding: 0 16px; /* ДОБАВЛЕНО! */
 }
 
 .page-wrapper {
@@ -119,14 +120,13 @@ html, body {
   min-height: 100vh;
   display: flex;
   flex-direction: column;
-  padding: 0 16px;
 }
 
 .header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 20px 0;
+  padding: 16px 0; /* УМЕНЬШЕНО с 20px */
   width: 100%;
   flex-shrink: 0;
 }
@@ -138,11 +138,11 @@ html, body {
 }
 
 .logo-icon {
-  font-size: 24px;
+  font-size: 20px; /* УМЕНЬШЕНО с 24px */
 }
 
 .logo-text {
-  font-size: 18px;
+  font-size: 16px; /* УМЕНЬШЕНО с 18px */
   font-weight: 700;
   color: #4A90E2;
 }
@@ -151,7 +151,7 @@ html, body {
   background: #4A90E2;
   color: #fff;
   border: none;
-  padding: 10px 20px;
+  padding: 8px 16px; /* УМЕНЬШЕНО с 10px 20px */
   border-radius: 8px;
   font-size: 14px;
   font-weight: 600;
@@ -174,4 +174,5 @@ html, body {
   z-index: 1999;
 }
 </style>
+
 

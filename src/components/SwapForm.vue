@@ -592,37 +592,44 @@ function closeQR() {
   z-index: 2000;
 }
 
-.wallet-modal, .qr-modal-wrapper {
+.wallet-modal {
   position: fixed;
-  bottom: 0;
-  left: 0;
-  right: 0;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
   background: #fff;
-  border-radius: 20px 20px 0 0;
+  border-radius: 20px;
+  box-shadow: 0 6px 32px rgba(0,0,0,0.18);
+  max-width: 380px;
+  width: 90%;
   z-index: 2001;
-  padding-bottom: env(safe-area-inset-bottom);
 }
 
 .qr-modal-wrapper {
-  bottom: auto;
+  position: fixed;
   top: 50%;
   left: 50%;
   transform: translate(-50%, -50%);
   border-radius: 20px;
-  max-width: 400px;
+  max-width: 420px;
   width: 90%;
+  z-index: 2001;
+  background: #fff;
+  box-shadow: 0 6px 32px rgba(0,0,0,0.18);
 }
 
 .qr-modal-card {
   background: #fff;
+  border-radius: 20px;
 }
 
 .modal-title-bar {
   display: flex;
-  justify-content: space-between;
+  justify-content: center;
   align-items: center;
-  padding: 20px 24px;
+  padding: 24px 60px 20px 24px; /* ← отступ справа под крестик */
   border-bottom: 1px solid #F0F0F0;
+  position: relative;
 }
 
 .modal-title-bar h3 {
@@ -630,9 +637,13 @@ function closeQR() {
   font-weight: 700;
   margin: 0;
   color: #1A1A1A;
+  text-align: center;
 }
 
 .close-modal-btn {
+  position: absolute;
+  top: 20px;
+  right: 20px;
   width: 32px;
   height: 32px;
   background: #F5F5F5;
@@ -640,66 +651,78 @@ function closeQR() {
   border-radius: 50%;
   font-size: 18px;
   cursor: pointer;
+  color: #7D7D7D;
   display: flex;
   align-items: center;
   justify-content: center;
-  color: #7D7D7D;
 }
 
 .wallet-options {
-  padding: 16px;
+  padding: 16px 24px 24px 24px;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
 }
 
 .wallet-option {
   display: flex;
   align-items: center;
   gap: 16px;
-  padding: 16px;
-  background: #FAFAFA;
-  border-radius: 12px;
+  background: #F8F8F8;
+  border-radius: 14px;
+  padding: 16px 20px;
   cursor: pointer;
   transition: background 0.2s;
+  width: 100%;
 }
-
 .wallet-option:hover {
-  background: #F0F0F0;
+  background: #EBF4FF;
 }
 
 .wallet-logo {
   width: 48px;
   height: 48px;
   background: linear-gradient(135deg, #4A90E2, #357ABD);
-  border-radius: 12px;
+  border-radius: 14px;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 24px;
+  font-size: 28px;
+  color: #fff;
+  flex-shrink: 0;
+  box-shadow: 0 2px 8px rgba(74,144,226,0.15);
 }
 
 .wallet-details {
-  flex: 1;
+  display: flex;
+  flex-direction: column;
 }
 
 .wallet-title {
-  font-weight: 600;
-  font-size: 16px;
-  color: #1A1A1A;
-  margin-bottom: 4px;
+  font-weight: 700;
+  font-size: 17px;
+  color: #222;
 }
 
 .wallet-subtitle {
   font-size: 13px;
   color: #7D7D7D;
+  margin-top: 2px;
 }
 
 .qr-content {
   padding: 32px 24px;
   text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
 }
 
 .qr-content canvas {
   border-radius: 12px;
-  margin-bottom: 16px;
+  margin: 0 auto 16px auto;
+  display: block;
 }
 
 .qr-hint {

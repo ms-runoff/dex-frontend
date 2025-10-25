@@ -350,17 +350,17 @@ function disconnect() {
 function openUniswap() {
   if (!wcUri.value) return
   
-  const deepLink = `uniswap://wc?uri=${encodeURIComponent(wcUri.value)}`
+  // Универсальная ссылка WalletConnect для всех кошельков
+  const wcUniversalLink = `https://walletconnect.com/wc?uri=${encodeURIComponent(wcUri.value)}`
   
-  // Проверяем, запущено ли приложение в Telegram
+  // В Telegram это сработает
   if (window.Telegram && window.Telegram.WebApp) {
-    // Используем Telegram API для открытия внешней ссылки
-    window.Telegram.WebApp.openLink(deepLink)
+    window.Telegram.WebApp.openTelegramLink(wcUniversalLink)
   } else {
-    // Обычное открытие для браузеров
-    window.location.href = deepLink
+    window.open(wcUniversalLink, '_blank')
   }
 }
+
 
 function closeQR() {
   qrModalOpen.value = false

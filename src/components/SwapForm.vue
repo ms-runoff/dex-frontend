@@ -1,113 +1,151 @@
 <template>
-  <div class="swap-form-wide">
-    <span class="swap-type">Своп</span>
+  <div class="swap-wrapper">
+    <div class="swap-card">
+      <h2 class="swap-title">Обмен токенов</h2>
 
-    <!-- Продать -->
-    <div class="swap-card-wide">
-      <div class="swap-label">Продать</div>
-      <div class="swap-input-row">
-        <input
-          class="swap-input"
-          type="number"
-          v-model="fromAmount"
-          placeholder="0"
-          @input="onFromInput"
-          min="0"
-        />
-        <div class="swap-token-row-right">
-          <img class="token-icon" src="../assets/eth.png" alt="ETH" />
-          <span class="token-code">ETH</span>
-          <span class="token-arrow">▼</span>
+      <!-- Вы отдаёте -->
+      <div class="input-section">
+        <div class="input-header">
+          <span class="label">Вы отдаёте</span>
+          <span class="balance-text">Баланс: {{ fromBalance }}</span>
         </div>
-      </div>
-      <div class="swap-secondary">{{ formatUSD(fromAmount * ethRate) }}</div>
-    </div>
-
-    <div class="swap-arrow-wide">
-      <span>↓</span>
-    </div>
-
-    <!-- Купить -->
-    <div class="swap-card-wide">
-      <div class="swap-label">Купить</div>
-      <div class="swap-input-row">
-        <input
-          class="swap-input"
-          type="number"
-          v-model="toAmount"
-          placeholder="0"
-          @input="onToInput"
-          min="0"
-        />
-        <div class="swap-token-row-right">
-          <img class="token-icon" src="../assets/usdt.png" alt="USDT" />
-          <span class="token-code">USDT</span>
-          <span class="token-arrow">▼</span>
-        </div>
-      </div>
-      <div class="swap-secondary">{{ formatUSD(toAmount) }}</div>
-    </div>
-
-    <!-- Главная кнопка действий -->
-    <button class="btn-wallet-wide" @click="handleMainButton">
-      {{ mainButtonText }}
-    </button>
-    <div class="swap-footer-rate-wide">
-      1 USDT = {{ ethPerUsdt }} ETH (1,00 $)
-    </div>
-  </div>
-
-  <!-- Меню выбора кошелька -->
-  <div v-if="isWalletMenuOpen" class="overlay" @click="closeWalletMenu"></div>
-  <transition name="slide">
-    <div v-if="isWalletMenuOpen" class="wallet-menu">
-      <div class="wallet-menu-header">
-        <h3>Выберите кошелёк</h3>
-        <button class="close-btn" @click="closeWalletMenu">✕</button>
-      </div>
-      <div class="wallet-list">
-        <div class="wallet-item" @click="selectWallet">
-          <div class="wallet-icon">🦄</div>
-          <span class="wallet-name">Uniswap Wallet</span>
-        </div>
-      </div>
-    </div>
-  </transition>
-
-  <!-- QR-модалка -->
-  <div v-if="showQRModal" class="qr-overlay" @click="closeQRModal"></div>
-  <transition name="fade">
-    <div v-if="showQRModal" class="qr-modal">
-      <div class="qr-modal-content">
-        <div class="qr-header">
-          <h3>Подключить Uniswap Wallet</h3>
-          <button class="close-btn" @click="closeQRModal">✕</button>
-        </div>
-        <div class="qr-body">
-          <div class="qr-code">
-            <canvas ref="qrCanvas"></canvas>
-          </div>
-          <p class="qr-instruction">
-            Отсканируйте QR-код или откройте приложение напрямую
-          </p>
-          <button 
-            v-if="walletConnectUri" 
-            @click="openInUniswap" 
-            class="btn-open-wallet"
-          >
-            🦄 Открыть в Uniswap Wallet
+        <div class="input-container">
+          <input
+            type="text"
+            v-model="fromAmount"
+            @input="onFromInput"
+            placeholder="0.0"
+            class="token-input"
+          />
+          <button class="token-selector" @click="showTokenModal = true">
+            <div class="token-avatar" :style="{ background: fromToken.color }">
+              {{ fromToken.icon }}
+            </div>
+            <span class="token-name">{{ fromToken.symbol }}</span>
+            <span class="dropdown-arrow">▼</span>
           </button>
-          <p v-if="connectionStatus" class="connection-status">
-            {{ connectionStatus }}
-          </p>
+        </div>
+      </div>
+
+      <!-- Кнопка переворота -->
+      <div class="swap-divider">
+        <button class="swap-flip-btn">⇅</button>
+      </div>
+
+      <!-- Вы получите -->
+      <div class="input-section">
+        <div class="input-header">
+          <span class="label">Вы получите</span>
+          <span class="balance-text">Баланс: {{ toBalance }}</span>
+        </div>
+        <div class="input-container">
+          <input
+            type="text"
+            v-model="toAmount"
+            @input="onToInput"
+            placeholder="0.0"
+            class="token-input"
+          />
+          <button class="token-selector" @click="showTokenModal = true">
+            <div class="token-avatar" :style="{ background: toToken.color }">
+              {{ toToken.icon }}
+            </div>
+            <span class="token-name">{{ toToken.symbol }}</span>
+            <span class="dropdown-arrow">▼</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Детали свопа -->
+      <div class="swap-info">
+        <div class="info-row">
+          <span class="info-label">Курс</span>
+          <span class="info-value">1 {{ fromToken.symbol }} = {{ exchangeRate }} {{ toToken.symbol }}</span>
+        </div>
+        <div class="info-row">
+          <span class="info-label">Проскальзывание</span>
+          <span class="info-value">{{ slippage }}%</span>
+        </div>
+        <div class="info-row">
+          <span class="info-label">Комиссия сети</span>
+          <span class="info-value">~{{ networkFee }} {{ fromToken.symbol }}</span>
+        </div>
+        <div class="info-row">
+          <span class="info-label">Мин. получение</span>
+          <span class="info-value">{{ minReceived }} {{ toToken.symbol }}</span>
+        </div>
+      </div>
+
+      <!-- Кнопка -->
+      <button class="action-button" @click="handleAction">
+        {{ buttonText }}
+      </button>
+    </div>
+
+    <!-- История транзакций -->
+    <div class="transactions-section" v-if="walletConnected">
+      <h3 class="section-title">Последние транзакции</h3>
+      <div class="tx-list">
+        <div class="tx-item" v-for="tx in recentTxs" :key="tx.id">
+          <div class="tx-pair">
+            <span class="tx-from">{{ tx.fromAmt }} {{ tx.fromTkn }}</span>
+            <span class="tx-arrow">→</span>
+            <span class="tx-to">{{ tx.toAmt }} {{ tx.toTkn }}</span>
+          </div>
+          <span class="tx-time">{{ tx.time }}</span>
         </div>
       </div>
     </div>
-  </transition>
+
+    <!-- Модалка кошелька -->
+    <div v-if="walletMenuOpen" class="modal-backdrop" @click="walletMenuOpen = false"></div>
+    <transition name="slide-up">
+      <div v-if="walletMenuOpen" class="wallet-modal">
+        <div class="modal-title-bar">
+          <h3>Подключить кошелёк</h3>
+          <button class="close-modal-btn" @click="walletMenuOpen = false">✕</button>
+        </div>
+        <div class="wallet-options">
+          <div class="wallet-option" @click="selectWallet">
+            <div class="wallet-logo">🦄</div>
+            <div class="wallet-details">
+              <div class="wallet-title">Uniswap Wallet</div>
+              <div class="wallet-subtitle">Официальный кошелёк</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </transition>
+
+    <!-- QR модалка -->
+    <div v-if="qrModalOpen" class="modal-backdrop" @click="closeQR"></div>
+    <transition name="fade">
+      <div v-if="qrModalOpen" class="qr-modal-wrapper">
+        <div class="qr-modal-card">
+          <div class="modal-title-bar">
+            <h3>Подключить Uniswap Wallet</h3>
+            <button class="close-modal-btn" @click="closeQR">✕</button>
+          </div>
+          <div class="qr-content">
+            <canvas ref="qrCanvas"></canvas>
+            <p class="qr-hint">Отсканируйте код приложением кошелька</p>
+            <button 
+              v-if="wcUri" 
+              @click="openUniswap" 
+              class="open-app-btn"
+            >
+              🦄 Открыть в Uniswap Wallet
+            </button>
+            <p v-if="statusMsg" class="status-message">{{ statusMsg }}</p>
+          </div>
+        </div>
+      </div>
+    </transition>
+  </div>
 </template>
 
 <script setup>
-import { ref, computed, onMounted, onUnmounted, nextTick, watch, defineProps, defineEmits } from 'vue'
+import { ref, computed, onMounted, onUnmounted, nextTick, watch } from 'vue'
 import SignClient from '@walletconnect/sign-client'
 import QRCode from 'qrcode'
 import { ethers } from 'ethers'
@@ -118,576 +156,596 @@ const props = defineProps({
   walletBalance: String
 })
 
-const emit = defineEmits(['wallet-connected', 'wallet-disconnected', 'open-wallet-info'])
+const emit = defineEmits(['wallet-connected', 'wallet-disconnected'])
 
-const ethRate = ref(3894.537)
+const fromToken = ref({ symbol: 'TON', icon: 'T', color: '#0088CC', name: 'Toncoin' })
+const toToken = ref({ symbol: 'USDT', icon: 'U', color: '#26A17B', name: 'Tether' })
 const fromAmount = ref('')
 const toAmount = ref('')
-const isWalletMenuOpen = ref(false)
-const showQRModal = ref(false)
+const fromBalance = ref('0.00')
+const toBalance = ref('0.00')
+const exchangeRate = ref('2.35')
+const slippage = ref('0.5')
+const networkFee = ref('0.05')
+const walletMenuOpen = ref(false)
+const qrModalOpen = ref(false)
+const showTokenModal = ref(false)
 const qrCanvas = ref(null)
-const connectionStatus = ref('')
+const statusMsg = ref('')
 const walletAddress = ref('')
-const walletConnectUri = ref('')
+const wcUri = ref('')
 const walletBalance = ref('0,00')
+
+const recentTxs = ref([
+  { id: 1, fromAmt: '1.5', fromTkn: 'TON', toAmt: '3.52', toTkn: 'USDT', time: '2 мин назад' },
+  { id: 2, fromAmt: '10', fromTkn: 'USDT', toAmt: '4.25', toTkn: 'TON', time: '15 мин назад' },
+  { id: 3, fromAmt: '0.5', fromTkn: 'TON', toAmt: '1.17', toTkn: 'USDT', time: '1 час назад' }
+])
 
 let signClient = null
 let session = null
 
-const ethPerUsdt = computed(() => (1 / ethRate.value).toFixed(8))
+const buttonText = computed(() => {
+  if (!walletAddress.value) return 'Подключите кошелёк'
+  const bal = parseFloat(walletBalance.value.replace(/\s/g, '').replace(',', '.'))
+  if (bal === 0 || isNaN(bal)) return 'Недостаточно средств'
+  return 'Обменять'
+})
 
-const mainButtonText = computed(() => {
-  if (!walletAddress.value) {
-    return 'Подключить кошелек'
-  }
-  const balanceNum = parseFloat(walletBalance.value.replace(/\s/g, '').replace(',', '.'))
-  if (balanceNum === 0 || isNaN(balanceNum)) {
-    return 'Добавить средства для свопа'
-  }
-  return 'Своп'
+const minReceived = computed(() => {
+  if (!toAmount.value) return '0.00'
+  return (parseFloat(toAmount.value) * 0.995).toFixed(2)
 })
 
 onMounted(async () => {
-  const projectId = import.meta.env.VITE_WALLETCONNECT_PROJECT_ID
-  if (!projectId) {
-    console.error('Project ID не найден в .env')
-    return
-  }
+  const pid = import.meta.env.VITE_WALLETCONNECT_PROJECT_ID
+  if (!pid) return
 
   try {
     signClient = await SignClient.init({
-      projectId,
+      projectId: pid,
       metadata: {
-        name: 'DEX MVP',
-        description: 'Децентрализованная биржа',
+        name: 'DEX Swap',
+        description: 'DEX',
         url: window.location.origin,
-        icons: ['https://walletconnect.com/walletconnect-logo.png']
+        icons: []
       }
     })
-    console.log('WalletConnect initialized')
 
-    // Восстановление сессии
     const sessions = signClient.session.getAll()
     if (sessions.length > 0) {
       session = sessions[0]
-      const accounts = session.namespaces.eip155.accounts
-      if (accounts && accounts.length > 0) {
-        const addr = accounts[0].split(':')[2]
-        walletAddress.value = addr
-        await fetchBalance(addr)
-        emitWalletConnected()
-      }
+      const acc = session.namespaces.eip155.accounts[0].split(':')[2]
+      walletAddress.value = acc
+      await loadBalance(acc)
+      notifyConnected()
     }
 
-    // Обработчик отключения
     signClient.on('session_delete', () => {
-      console.log('Session deleted')
-      disconnectWallet()
+      disconnect()
     })
-  } catch (error) {
-    console.error('WalletConnect init error:', error)
+  } catch (err) {
+    console.error(err)
   }
 
-  // Слушаем события от App.vue
-  window.addEventListener('open-wallet-menu', openWalletMenu)
-  window.addEventListener('disconnect-wallet', disconnectWallet)
+  window.addEventListener('open-wallet-menu', openWallet)
+  window.addEventListener('disconnect-wallet', disconnect)
 })
 
 onUnmounted(() => {
-  window.removeEventListener('open-wallet-menu', openWalletMenu)
-  window.removeEventListener('disconnect-wallet', disconnectWallet)
+  window.removeEventListener('open-wallet-menu', openWallet)
+  window.removeEventListener('disconnect-wallet', disconnect)
 })
 
 watch(walletAddress, async (addr) => {
-  if (addr) {
-    await fetchBalance(addr)
-  }
+  if (addr) await loadBalance(addr)
 })
 
-async function fetchBalance(address) {
+async function loadBalance(addr) {
   try {
     const provider = new ethers.JsonRpcProvider('https://ethereum.publicnode.com')
-    const bal = await provider.getBalance(address)
+    const bal = await provider.getBalance(addr)
     const ethVal = parseFloat(ethers.formatEther(bal))
-    const usd = (ethVal * ethRate.value).toFixed(2)
+    const usd = (ethVal * parseFloat(exchangeRate.value) * 1000).toFixed(2)
     walletBalance.value = Number(usd).toLocaleString('ru-RU')
-    console.log('Balance loaded:', ethVal, 'ETH =', usd, 'USD')
-  } catch (error) {
-    console.error('Balance fetch error:', error)
+    fromBalance.value = ethVal.toFixed(4)
+  } catch {
     walletBalance.value = '0,00'
+    fromBalance.value = '0.00'
   }
-}
-
-function formatUSD(val) {
-  if (!val || isNaN(val)) return '0 $'
-  return Number(val).toLocaleString('ru-RU', { maximumFractionDigits: 2 }) + ' $'
 }
 
 function onFromInput() {
-  toAmount.value = fromAmount.value
-    ? (parseFloat(fromAmount.value) * ethRate.value).toFixed(2)
-    : ''
+  if (fromAmount.value) {
+    toAmount.value = (parseFloat(fromAmount.value) * parseFloat(exchangeRate.value)).toFixed(2)
+  } else {
+    toAmount.value = ''
+  }
 }
 
 function onToInput() {
-  fromAmount.value = toAmount.value
-    ? (parseFloat(toAmount.value) / ethRate.value).toFixed(6)
-    : ''
-}
-
-function handleMainButton() {
-  if (!walletAddress.value) {
-    // Кошелёк не подключен — открываем меню выбора
-    openWalletMenu()
+  if (toAmount.value) {
+    fromAmount.value = (parseFloat(toAmount.value) / parseFloat(exchangeRate.value)).toFixed(2)
   } else {
-    const balanceNum = parseFloat(walletBalance.value.replace(/\s/g, '').replace(',', '.'))
-    if (balanceNum === 0 || isNaN(balanceNum)) {
-      // Баланс 0 — открываем меню пополнения
-      emit('open-wallet-info')
-    } else {
-      // Есть баланс — выполняем своп
-      performSwap()
-    }
+    fromAmount.value = ''
   }
 }
 
-function openWalletMenu() {
-  isWalletMenuOpen.value = true
+function handleAction() {
+  if (!walletAddress.value) {
+    openWallet()
+  } else {
+    alert('Обмен будет реализован позже')
+  }
 }
 
-function closeWalletMenu() {
-  isWalletMenuOpen.value = false
+function openWallet() {
+  walletMenuOpen.value = true
 }
 
 async function selectWallet() {
-  closeWalletMenu()
-  showQRModal.value = true
-  await connectWalletConnect()
+  walletMenuOpen.value = false
+  qrModalOpen.value = true
+  await connectWC()
 }
 
-async function connectWalletConnect() {
-  if (!signClient) {
-    console.error('SignClient not initialized')
-    connectionStatus.value = 'WalletConnect не инициализирован'
-    return
-  }
+async function connectWC() {
+  if (!signClient) return
 
   try {
-    connectionStatus.value = 'Генерация QR-кода...'
+    statusMsg.value = 'Генерация QR...'
 
     const { uri, approval } = await signClient.connect({
       requiredNamespaces: {
         eip155: {
-          methods: ['eth_sendTransaction', 'personal_sign', 'eth_signTypedData'],
+          methods: ['eth_sendTransaction', 'personal_sign'],
           chains: ['eip155:1'],
-          events: ['chainChanged', 'accountsChanged']
+          events: ['accountsChanged']
         }
       }
     })
 
     if (uri) {
-      walletConnectUri.value = uri
+      wcUri.value = uri
       await nextTick()
       if (qrCanvas.value) {
         await QRCode.toCanvas(qrCanvas.value, uri, {
           width: 280,
           margin: 2,
-          color: { dark: '#1a202c', light: '#ffffff' }
+          color: { dark: '#4A90E2', light: '#fff' }
         })
-        connectionStatus.value = 'Ожидание подтверждения...'
+        statusMsg.value = 'Ожидание подтверждения...'
       }
     }
 
     session = await approval()
-    const accounts = session.namespaces.eip155.accounts
-    if (accounts && accounts.length > 0) {
-      const acct = accounts[0].split(':')[2]
-      walletAddress.value = acct
-      console.log('✅ Wallet address set:', acct)
-      connectionStatus.value = `✅ Подключено: ${acct.slice(0, 6)}...${acct.slice(-4)}`
+    const acc = session.namespaces.eip155.accounts[0].split(':')[2]
+    walletAddress.value = acc
+    statusMsg.value = '✅ Подключено'
 
-      await fetchBalance(acct)
-      emitWalletConnected()
+    await loadBalance(acc)
+    notifyConnected()
 
-      setTimeout(closeQRModal, 2000)
-    }
-  } catch (error) {
-    console.error('WalletConnect error:', error)
-    connectionStatus.value = '❌ Ошибка подключения'
+    setTimeout(closeQR, 2000)
+  } catch {
+    statusMsg.value = '❌ Ошибка'
   }
 }
 
-function emitWalletConnected() {
+function notifyConnected() {
   emit('wallet-connected', {
     address: walletAddress.value,
     balance: walletBalance.value
   })
 }
 
-function disconnectWallet() {
+function disconnect() {
   walletAddress.value = ''
   walletBalance.value = '0,00'
+  fromBalance.value = '0.00'
   session = null
   emit('wallet-disconnected')
 }
 
-function openInUniswap() {
-  const link = `uniswap://wc?uri=${encodeURIComponent(walletConnectUri.value)}`
-  window.location.href = link
-  setTimeout(() => {
-    connectionStatus.value = 'Если Uniswap Wallet не открылся, установите его'
-  }, 1000)
+function openUniswap() {
+  window.location.href = `uniswap://wc?uri=${encodeURIComponent(wcUri.value)}`
 }
 
-function closeQRModal() {
-  showQRModal.value = false
-  connectionStatus.value = ''
-  walletConnectUri.value = ''
-}
-
-function performSwap() {
-  alert('Функция свопа будет реализована позже')
+function closeQR() {
+  qrModalOpen.value = false
+  statusMsg.value = ''
+  wcUri.value = ''
 }
 </script>
 
 <style scoped>
-.swap-form-wide {
-  margin: 0 auto;
-  background: #ffffff;
-  border-radius: 28px;
-  box-shadow: 0 8px 40px rgba(0, 0, 0, 0.08);
+.swap-wrapper {
   width: 100%;
-  max-width: 700px;
-  padding: 28px 60px 28px 60px;
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
 }
-.swap-type {
-  background: #e8f5f4;
-  color: #0d7a73;
-  font-size: 18px;
-  font-weight: 800;
-  border-radius: 14px;
-  padding: 6px 24px;
-  align-self: flex-start;
+
+.swap-card, .transactions-section {
+  background: #fff;
+  border-radius: 20px;
+  padding: 24px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+  margin-bottom: 16px;
+  width: 100%;
+}
+
+.swap-title {
+  font-size: 20px;
+  font-weight: 700;
+  color: #1A1A1A;
+  margin: 0 0 20px 0;
+}
+
+.input-section {
+  margin-bottom: 16px;
+}
+
+.input-header {
+  display: flex;
+  justify-content: space-between;
   margin-bottom: 8px;
 }
-.swap-card-wide {
-  background: #f9fafb;
-  border-radius: 18px;
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.06);
-  border: 1px solid #e8ebed;
-  padding: 18px 20px 16px 20px;
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-  align-items: flex-start;
+
+.label {
+  font-size: 14px;
+  color: #7D7D7D;
 }
-.swap-label {
-  font-size: 17px;
-  color: #4a5568;
-  margin-bottom: 2px;
-  font-weight: 600;
+
+.balance-text {
+  font-size: 13px;
+  color: #B3B3B3;
 }
-.swap-input-row {
-  width: 100%;
+
+.input-container {
   display: flex;
-  flex-direction: row;
   align-items: center;
+  background: #F5F5F5;
+  border-radius: 12px;
+  padding: 12px 16px;
   gap: 12px;
 }
-.swap-input {
-  flex: 1 1 auto;
-  font-size: 36px;
-  font-weight: 700;
-  color: #1a202c;
+
+.token-input {
+  flex: 1;
+  min-width: 0; 
+  font-size: 24px;
+  font-weight: 600;
   border: none;
   background: transparent;
   outline: none;
-  min-width: 60px;
+  color: #1A1A1A;
 }
-.swap-input::placeholder {
-  color: #cbd5e0;
-  opacity: 1;
+
+.token-input::placeholder {
+  color: #D1D1D1;
 }
-.swap-secondary {
-  font-size: 15px;
-  color: #718096;
-  font-weight: 500;
-}
-.swap-token-row-right {
+
+.token-selector {
   display: flex;
   align-items: center;
-  justify-content: flex-end;
-  gap: 6px;
-  padding: 8px 14px;
-  background: #ffffff;
-  border-radius: 14px;
-  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
-  border: 1px solid #e2e8f0;
+  gap: 8px;
+  background: #fff;
+  border: none;
+  border-radius: 10px;
+  padding: 8px 12px;
+  cursor: pointer;
+  transition: background 0.2s;
+  flex-shrink: 0;
+  white-space: nowrap; 
 }
-.token-icon {
-  width: 28px;
-  height: 28px;
+
+
+.token-selector:hover {
+  background: #FAFAFA;
 }
-.token-code {
+
+.token-avatar {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
   font-weight: 700;
-  font-size: 17px;
-  color: #2d3748;
+  font-size: 14px;
 }
-.token-arrow {
-  font-size: 18px;
-  color: #a0aec0;
+
+.token-name {
+  font-weight: 600;
+  font-size: 16px;
+  color: #1A1A1A;
 }
-.swap-arrow-wide {
+
+.dropdown-arrow {
+  font-size: 10px;
+  color: #B3B3B3;
+}
+
+.swap-divider {
   display: flex;
   justify-content: center;
-  align-items: center;
-  height: 20px;
-  font-size: 22px;
-  color: #718096;
-  margin: 2px 0 2px 0;
+  margin: 12px 0;
 }
-.btn-wallet-wide {
-  width: 100%;
-  background: linear-gradient(135deg, #19b3ae 0%, #16a89f 100%);
-  color: #ffffff;
-  border: none;
-  border-radius: 18px;
-  padding: 16px 0px;
-  font-size: 20px;
-  font-weight: 800;
-  margin: 14px 0 0;
+
+.swap-flip-btn {
+  width: 36px;
+  height: 36px;
+  background: #fff;
+  border: 2px solid #E5E5E5;
+  border-radius: 50%;
+  font-size: 18px;
   cursor: pointer;
-  transition: all 0.2s ease;
-  box-shadow: 0 6px 20px rgba(25, 179, 174, 0.3);
+  transition: all 0.2s;
 }
-.btn-wallet-wide:hover {
-  background: linear-gradient(135deg, #16a89f 0%, #138785 100%);
-  transform: translateY(-2px);
-  box-shadow: 0 8px 24px rgba(25, 179, 174, 0.4);
+
+.swap-flip-btn:hover {
+  border-color: #4A90E2;
+  transform: rotate(180deg);
 }
-.swap-footer-rate-wide {
-  text-align: left;
-  color: #4a5568;
+
+.swap-info {
+  background: #FAFAFA;
+  border-radius: 12px;
+  padding: 16px;
+  margin: 16px 0;
+}
+
+.info-row {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 8px;
+}
+
+.info-row:last-child {
+  margin-bottom: 0;
+}
+
+.info-label {
   font-size: 14px;
-  margin-top: 8px;
-  margin-left: 2px;
-  font-weight: 500;
+  color: #7D7D7D;
 }
-.overlay {
-  position: fixed;
-  top: 0;
-  left: 0;
+
+.info-value {
+  font-size: 14px;
+  font-weight: 600;
+  color: #1A1A1A;
+}
+
+.action-button {
   width: 100%;
-  height: 100%;
-  background: rgba(0, 0, 0, 0.5);
-  z-index: 999;
+  background: #4A90E2;
+  color: #fff;
+  border: none;
+  border-radius: 12px;
+  padding: 16px;
+  font-size: 16px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 0.2s;
 }
-.wallet-menu {
-  position: fixed;
-  top: 0;
-  right: 0;
-  width: 400px;
-  max-width: 90vw;
-  height: 100vh;
-  background: #ffffff;
-  box-shadow: -4px 0 20px rgba(0, 0, 0, 0.15);
-  z-index: 1000;
+
+.action-button:hover {
+  background: #357ABD;
+}
+
+.transactions-section {
+  background: #fff;
+  border-radius: 20px;
+  padding: 24px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+}
+
+.section-title {
+  font-size: 18px;
+  font-weight: 700;
+  color: #1A1A1A;
+  margin: 0 0 16px 0;
+}
+
+.tx-list {
   display: flex;
   flex-direction: column;
+  gap: 12px;
 }
-.wallet-menu-header {
+
+.tx-item {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 24px 28px;
-  border-bottom: 1px solid #e2e8f0;
+  padding: 12px;
+  background: #FAFAFA;
+  border-radius: 10px;
 }
-.wallet-menu-header h3 {
-  margin: 0;
-  font-size: 22px;
-  color: #1a202c;
-  font-weight: 700;
-}
-.close-btn {
-  background: transparent;
-  border: none;
-  font-size: 28px;
-  color: #718096;
-  cursor: pointer;
-  transition: color 0.2s;
-  line-height: 1;
-}
-.close-btn:hover {
-  color: #1a202c;
-}
-.wallet-list {
-  padding: 20px;
-  overflow-y: auto;
-}
-.wallet-item {
+
+.tx-pair {
   display: flex;
   align-items: center;
-  gap: 16px;
-  padding: 18px 20px;
-  background: #f9fafb;
-  border-radius: 14px;
-  border: 1px solid #e2e8f0;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  margin-bottom: 12px;
+  gap: 8px;
 }
-.wallet-item:hover {
-  background: #e8f5f4;
-  border-color: #19b3ae;
-  transform: translateX(-4px);
-}
-.wallet-icon {
-  font-size: 32px;
-}
-.wallet-name {
-  font-size: 18px;
+
+.tx-from, .tx-to {
   font-weight: 600;
-  color: #2d3748;
+  font-size: 14px;
+  color: #1A1A1A;
 }
-.qr-overlay {
+
+.tx-arrow {
+  color: #B3B3B3;
+}
+
+.tx-time {
+  font-size: 12px;
+  color: #B3B3B3;
+}
+
+.modal-backdrop {
   position: fixed;
   top: 0;
   left: 0;
   width: 100%;
   height: 100%;
-  background: rgba(0, 0, 0, 0.7);
-  z-index: 1500;
+  background: rgba(0,0,0,0.5);
+  z-index: 2000;
 }
-.qr-modal {
+
+.wallet-modal, .qr-modal-wrapper {
   position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: #fff;
+  border-radius: 20px 20px 0 0;
+  z-index: 2001;
+  padding-bottom: env(safe-area-inset-bottom);
+}
+
+.qr-modal-wrapper {
+  bottom: auto;
   top: 50%;
   left: 50%;
   transform: translate(-50%, -50%);
-  z-index: 1600;
-  width: 420px;
-  max-width: 90vw;
-}
-.qr-modal-content {
-  background: #ffffff;
   border-radius: 20px;
-  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
-  overflow: hidden;
+  max-width: 400px;
+  width: 90%;
 }
-.qr-header {
+
+.qr-modal-card {
+  background: #fff;
+}
+
+.modal-title-bar {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 24px 28px;
-  border-bottom: 1px solid #e2e8f0;
+  padding: 20px 24px;
+  border-bottom: 1px solid #F0F0F0;
 }
-.qr-header h3 {
-  margin: 0;
-  font-size: 22px;
-  color: #1a202c;
+
+.modal-title-bar h3 {
+  font-size: 18px;
   font-weight: 700;
+  margin: 0;
+  color: #1A1A1A;
 }
-.qr-body {
-  padding: 32px 28px;
+
+.close-modal-btn {
+  width: 32px;
+  height: 32px;
+  background: #F5F5F5;
+  border: none;
+  border-radius: 50%;
+  font-size: 18px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #7D7D7D;
+}
+
+.wallet-options {
+  padding: 16px;
+}
+
+.wallet-option {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 16px;
+  background: #FAFAFA;
+  border-radius: 12px;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.wallet-option:hover {
+  background: #F0F0F0;
+}
+
+.wallet-logo {
+  width: 48px;
+  height: 48px;
+  background: linear-gradient(135deg, #4A90E2, #357ABD);
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 24px;
+}
+
+.wallet-details {
+  flex: 1;
+}
+
+.wallet-title {
+  font-weight: 600;
+  font-size: 16px;
+  color: #1A1A1A;
+  margin-bottom: 4px;
+}
+
+.wallet-subtitle {
+  font-size: 13px;
+  color: #7D7D7D;
+}
+
+.qr-content {
+  padding: 32px 24px;
   text-align: center;
 }
-.qr-code {
-  margin-bottom: 20px;
-  display: flex;
-  justify-content: center;
-}
-.qr-code canvas {
+
+.qr-content canvas {
   border-radius: 12px;
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
+  margin-bottom: 16px;
 }
-.qr-instruction {
-  color: #4a5568;
-  font-size: 16px;
-  line-height: 1.5;
-  margin: 0 0 16px 0;
-}
-.btn-open-wallet {
-  width: 100%;
-  padding: 14px 24px;
-  background: linear-gradient(135deg, #ff007a 0%, #e7016a 100%);
-  color: #ffffff;
-  border: none;
-  border-radius: 14px;
-  font-size: 16px;
-  font-weight: 700;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  box-shadow: 0 4px 16px rgba(255, 0, 122, 0.25);
-}
-.btn-open-wallet:hover {
-  background: linear-gradient(135deg, #e7016a 0%, #cc0059 100%);
-  transform: translateY(-2px);
-  box-shadow: 0 6px 20px rgba(255, 0, 122, 0.35);
-}
-.connection-status {
-  margin-top: 16px;
-  padding: 12px;
-  background: #e8f5f4;
-  color: #0d7a73;
-  border-radius: 8px;
+
+.qr-hint {
   font-size: 14px;
-  font-weight: 600;
-  line-height: 1.4;
+  color: #7D7D7D;
+  margin-bottom: 16px;
 }
-.swap-form-wide {
-  margin: 0 auto;
-  background: #ffffff;
-  border-radius: 20px;
-  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.08);
+
+.open-app-btn {
   width: 100%;
-  max-width: 700px;
-  padding: 24px 32px;
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
-}
-/* На мобильных — компактнее */
-@media (max-width: 768px) {
-  .swap-form-wide {
-    max-width: 90vw;
-    padding: 16px 18px;
-    border-radius: 16px;
-  }
-  .swap-input {
-    font-size: 24px;
-  }
-  .btn-wallet-wide {
-    font-size: 18px;
-    padding: 12px 0;
-  }
-  .swap-type {
-    font-size: 15px;
-    padding: 4px 16px;
-  }
-}
-.slide-enter-active, .slide-leave-active {
-  transition: transform 0.3s ease;
-}
-.slide-enter-from {
-  transform: translateX(100%);
-}
-.slide-leave-to {
-  transform: translateX(100%);
-}
-.fade-enter-active, .fade-leave-active {
-  transition: opacity 0.3s ease;
-}
-.fade-enter-from, .fade-leave-to {
-  opacity: 0;
-}
-.btn-open-wallet {
+  background: #4A90E2;
+  color: #fff;
+  border: none;
+  border-radius: 12px;
+  padding: 14px;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
   display: none;
 }
+
 @media (max-width: 768px) {
-  .btn-open-wallet {
+  .open-app-btn {
     display: block;
   }
+}
+
+.status-message {
+  margin-top: 12px;
+  font-size: 13px;
+  color: #4A90E2;
+}
+
+.slide-up-enter-active, .slide-up-leave-active {
+  transition: transform 0.3s ease;
+}
+
+.slide-up-enter-from, .slide-up-leave-to {
+  transform: translateY(100%);
+}
+
+.fade-enter-active, .fade-leave-active {
+  transition: opacity 0.3s;
+}
+
+.fade-enter-from, .fade-leave-to {
+  opacity: 0;
 }
 </style>

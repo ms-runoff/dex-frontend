@@ -348,7 +348,18 @@ function disconnect() {
 }
 
 function openUniswap() {
-  window.location.href = `uniswap://wc?uri=${encodeURIComponent(wcUri.value)}`
+  if (!wcUri.value) return
+  
+  const deepLink = `uniswap://wc?uri=${encodeURIComponent(wcUri.value)}`
+  
+  // Проверяем, запущено ли приложение в Telegram
+  if (window.Telegram && window.Telegram.WebApp) {
+    // Используем Telegram API для открытия внешней ссылки
+    window.Telegram.WebApp.openLink(deepLink)
+  } else {
+    // Обычное открытие для браузеров
+    window.location.href = deepLink
+  }
 }
 
 function closeQR() {
